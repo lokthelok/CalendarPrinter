@@ -1,17 +1,27 @@
 #include <WiFi.h>
-#include <HTTPClient.h>
 #include <SPIFFS.h>
-#include "urls.h"
+#include <WiFiClientSecure.h>
+#if __has_include(<urls.h>)
+#  include <urls.h>
+#  define URLS
+#endif
 
-#define NO_WIFI
- 
+#ifndef URLS
+const char* ssid = "SSID";
+const char* password = "PASSWORD";
+const char* script = "https://script.google.com/macros/s/A1B2C3D4/exec";
+#else
 const char* ssid = SSID;
 const char* password = PSK;
+const char* script = SCRIPT_URL;
+#endif
 
-
+WiFiClientSecure client;
 
 void listAllFiles();
 String getValue(String data, char separator, int index);
+String FetchGCal(String url);
+String WebFetch(String url);
 
 void setup() {
  
@@ -23,7 +33,7 @@ void setup() {
     return;
   }
   
-  listAllFiles();
+  //listAllFiles();
   //Serial.printf("Formatted: %u\n", int(SPIFFS.format()));
   //listAllFiles();
 
@@ -41,115 +51,108 @@ void setup() {
 }
  
 void loop() {
- 
-#ifndef NO_WIFI
-  if ((WiFi.status() == WL_CONNECTED)) { //Check the current connection status
- 
-    HTTPClient http;
-    File f = SPIFFS.open("/cal.ics", "w");
-
-    if(f)
-    {
-      http.begin(CAL_URL); //Specify the URL
-      int httpCode = http.GET(); //Make the request
-  
-      if (httpCode > 0)
-      { //Check for the returning code
-        Serial.println(httpCode);
-        if (httpCode == HTTP_CODE_OK) {
-          http.writeToStream(&f);
-        }
-        else
-        {
-          Serial.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-        }
-      }
-  
-      else {
-        Serial.println("[HTTP] GET... failed, error: 0\n");
-      }
-    } 
-    http.end(); //Free the resources
-  }
-#endif
-
-File f;
-
-#ifdef NO_WIFI
-f = SPIFFS.open("/cal.ics", "w");
-f.print(NO_WIFI_CAL);
-f.close();
-Serial.print("Fake ical Written\n");
-#endif
-
-  //Process File
-  //Search for "BEGIN:VEVENT\n", discarding lines (inclusive)
-  //Save following lines until "END:VEVENT\n" (which is also discarded) in String array
-  //Run a 'process event' command to:
-  //  take each line saved into perhaps a string array and:
-  //    Strip identifier, decode data, save to struct
-  //  increment event struct array index
-  //Repeat until end of file
-
-  //Read in line to temp
-  f = SPIFFS.open("/cal.ics", "r");
-  String line;
-  //Check if it is 'BEGIN:VEVENT'
-  while(f.available())
-  {
-    while(line != "BEGIN:VEVENT")
-    {
-      line = f.readStringUntil('\n');
-    }
-    //Event Found
-    String label[20];
-    String data[20];
-    uint16_t line_i = 0;
-    line = f.readStringUntil('\n');
-    while(line != "END:VEVENT")
-    {
-      for(int i=0; i < line.length(); i++)
-      {
-        if(line[i] == ':' || line[i] == ';')
-        {
-          //Found the separator
-          label[line_i] = line.substring(0,i);
-          data[line_i] = line.substring(i+1,line.length());
-          line_i++;
-          break;
-        }
-      }
-      line = f.readStringUntil('\n');
-    }
-
-    Serial.println("\nCalendar Event:");
-    for(int j=0;j<line_i;j++)
-    {
-      Serial.printf("%2u ",j);
-      Serial.print(label[j]);
-      Serial.print("-->");
-      Serial.println(data[j]);
-    }
-  }
-  
-  
-  
-  //Print File  
-  // listAllFiles();
-  // File f = SPIFFS.open("/cal.ics", "r");
-  // if(f)
-  // {
-  //   Serial.printf("File Content (%u bytes):\n", f.available());
-  //   while(f.available()){
-  //       Serial.write(f.read());
-  //   }
-  //   f.close();
-  // }
+  if (WiFi.status() == WL_CONNECTED)
+	{
+		String response = FetchGCal(script);
+		Serial.print("GCAL:");
+    Serial.println(response);
+		//process(response);
+	}
 
   Serial.println("\nwhile(1);");
   while(1);
   delay(10000);
  
+}
+
+String FetchGCal(String url)
+{
+	String Return1;
+	String Return2;
+	Return1 = WebFetch(url);
+	Return2 = WebFetch(Return1);
+
+	return(Return2);
+}
+
+String WebFetch(String url)
+{
+	const char *strURL;
+	String Response;
+	char server[80];
+	bool Redirect = 0;
+
+	strURL = url.c_str();
+	Serial.print("GCAL:URL:");
+  Serial.println(strURL);
+
+	if (memcmp("https://", strURL, 8) == 0)
+	{
+		int i;
+		for(i=0; i<80; i++)
+		{
+			if (strURL[i+8] == '/')
+				break;
+			server[i] = strURL[i+8];
+		}
+		server[i] = 0;
+	}
+
+	Serial.print("GCAL:server:");
+  Serial.println(server);
+	if (!client.connect(server, 443))
+		Serial.println("GCAL:No connection");
+	else
+	{
+		Serial.println("GCAL:Connect");
+		// Make a HTTP request:
+		client.print("GET ");
+		client.print(url);
+		client.println(" HTTP/1.0");
+
+		client.print("Host: ");
+		client.println(server);
+		client.println("Connection: close");
+		client.println();
+
+		String header;
+		while (client.connected())
+		{
+			String line = client.readStringUntil('\n');
+			header = header + line + "\n";
+			if (line.startsWith("Location: "))
+			{
+				Redirect = 1;
+				Response = line.substring(line.indexOf("http"));
+				Serial.print("GCAL:REDIRECT:");
+        Serial.println(Response);
+			}
+			if (line == "\r")
+				break;
+		}
+		Serial.print("GCAL:HEADER:");
+    Serial.println(header);
+
+		String body;
+		while (client.available())
+		{
+			String line = client.readStringUntil('\n');
+			body = body + line + "\n";
+			if (line == "\r")
+				break;
+		}
+
+		if (!Redirect)
+		{
+			Serial.print("GCAL:BODY:");
+      Serial.println(body);
+			Response = body;
+		}
+
+		client.stop();
+	}
+
+	return(Response);
 }
 
 void listAllFiles(){

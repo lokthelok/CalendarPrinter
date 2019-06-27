@@ -1,0 +1,19 @@
+function doGet(){
+  return ContentService.createTextOutput(GetEvents());
+}
+
+function GetEvents(){
+  var _calendarName = 'Calendar_Name'
+  var Cal = CalendarApp.getCalendarsByName(_calendarName)[0];
+  var Now = new Date();
+  var events = Cal.getEventsForDay(Now);
+  str = "";
+  for (var i = 0; i < events.length; i++){
+    str += events[i].getTitle() + ',' ;
+    str += events[i].getStartTime().toLocaleTimeString() + ',' ;
+    str += events[i].getEndTime().toLocaleTimeString() + ',' ;
+    str += '\n';
+  }
+  str = str.substring(0, str.length - 1);
+  return str;
+}
