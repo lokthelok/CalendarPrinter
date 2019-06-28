@@ -1,9 +1,23 @@
 #include <WiFi.h>
 #include <SPIFFS.h>
 #include <WiFiClientSecure.h>
+#include <calEvent.h>
 #if __has_include(<urls.h>)
 #  include <urls.h>
 #  define URLS
+#endif
+
+//Uncomment DEBUGG to print serial debug messages
+// LarryD, Arduino forum
+//#define DEBUGG
+#ifdef DEBUGG
+#define DPRINT(...)    Serial.print(__VA_ARGS__)
+#define DPRINTLN(...)  Serial.println(__VA_ARGS__)
+#define DPRINTF(...)   Serial.printf(__VA_ARGS__)
+#else
+#define DPRINT(...)
+#define DPRINTLN(...)
+#define DPRINTF(...)
 #endif
 
 #ifndef URLS
@@ -16,37 +30,32 @@ const char* password = PSK;
 const char* script = SCRIPT_URL;
 #endif
 
-WiFiClientSecure client;
-
-void listAllFiles();
-String getValue(String data, char separator, int index);
 String FetchGCal(String url);
 String WebFetch(String url);
+
+WiFiClientSecure client;
+
 
 void setup() {
  
   Serial.begin(115200);
-  delay(1000);
+  delay(1250);
 
   if (!SPIFFS.begin(true)) {
-    Serial.println("An Error has occurred while mounting SPIFFS");
-    return;
+    DPRINTLN("Error mounting SPIFFS");
   }
   
   //listAllFiles();
-  //Serial.printf("Formatted: %u\n", int(SPIFFS.format()));
+  //DPRINTF("Formatted: %u\n", int(SPIFFS.format()));
   //listAllFiles();
 
-#ifndef NO_WIFI
-  delay(1000);
+  DPRINT("Connecting to WiFi.");
   WiFi.begin(ssid, password);
- 
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
+    DPRINT(".");
+    delay(300);
   }
-#endif
-  Serial.println("Connected to the WiFi network");
+  DPRINTF("\nConnected to WiFi: %s\n",ssid);
  
 }
  
@@ -54,12 +63,18 @@ void loop() {
   if (WiFi.status() == WL_CONNECTED)
 	{
 		String response = FetchGCal(script);
-		Serial.print("GCAL:");
-    Serial.println(response);
-		//process(response);
+		DPRINTF("Today's Calendar:\n%s\n", response.c_str());
+		
+    //Extract single event for testing
+    String line = getValue(response,'\n',4);
+    DPRINTF("Extracted Event: %s\n",line.c_str());
+
+    //Create CalEvent
+    calEvent ev0(line);
+    Serial.println(ev0.stringify());
 	}
 
-  Serial.println("\nwhile(1);");
+  DPRINTLN("\nwhile(1);");
   while(1);
   delay(10000);
  
@@ -83,8 +98,8 @@ String WebFetch(String url)
 	bool Redirect = 0;
 
 	strURL = url.c_str();
-	Serial.print("GCAL:URL:");
-  Serial.println(strURL);
+	DPRINT("GCAL:URL:");
+  DPRINTLN(strURL);
 
 	if (memcmp("https://", strURL, 8) == 0)
 	{
@@ -98,13 +113,13 @@ String WebFetch(String url)
 		server[i] = 0;
 	}
 
-	Serial.print("GCAL:server:");
-  Serial.println(server);
+	DPRINT("GCAL:server:");
+  DPRINTLN(server);
 	if (!client.connect(server, 443))
-		Serial.println("GCAL:No connection");
+		DPRINTLN("GCAL:No connection");
 	else
 	{
-		Serial.println("GCAL:Connect");
+		DPRINTLN("GCAL:Connect");
 		// Make a HTTP request:
 		client.print("GET ");
 		client.print(url);
@@ -124,14 +139,14 @@ String WebFetch(String url)
 			{
 				Redirect = 1;
 				Response = line.substring(line.indexOf("http"));
-				Serial.print("GCAL:REDIRECT:");
-        Serial.println(Response);
+				DPRINT("GCAL:REDIRECT:");
+        DPRINTLN(Response);
 			}
 			if (line == "\r")
 				break;
 		}
-		Serial.print("GCAL:HEADER:");
-    Serial.println(header);
+		DPRINT("GCAL:HEADER:");
+    DPRINTLN(header);
 
 		String body;
 		while (client.available())
@@ -144,8 +159,8 @@ String WebFetch(String url)
 
 		if (!Redirect)
 		{
-			Serial.print("GCAL:BODY:");
-      Serial.println(body);
+			DPRINT("GCAL:BODY:");
+      DPRINTLN(body);
 			Response = body;
 		}
 
@@ -153,36 +168,4 @@ String WebFetch(String url)
 	}
 
 	return(Response);
-}
-
-void listAllFiles(){
-  Serial.println("----Listing SPIFFS files----");
-  File root = SPIFFS.open("/");
- 
-  File file = root.openNextFile();
- 
-  while(file){
- 
-      Serial.print("FILE: ");
-      Serial.println(file.name());
- 
-      file = root.openNextFile();
-  }
-  Serial.println("------------end-------------"); 
-}
-
-String getValue(String data, char separator, int index)
-{
-  int found = 0;
-  int strIndex[] = {
-    0, -1  };
-  int maxIndex = data.length()-1;
-  for(int i=0; i<=maxIndex && found<=index; i++){
-    if(data.charAt(i)==separator || i==maxIndex){
-      found++;
-      strIndex[0] = strIndex[1]+1;
-      strIndex[1] = (i == maxIndex) ? i+1 : i;
-    }
-  }
-  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
