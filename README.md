@@ -1,7 +1,7 @@
 # CalendarPrinter
 Daily Calendar Printer (ESP32 and Serial Thermal Printer)
 
-Latest Released Source: [download](/lokthelok/CalendarPrinter/releases/latest/download/v1.0.0.zip)
+Latest Released Source: [download](/releases/latest/download/v1.0.0.zip)
 
 ## Outline
 * ESP32 scans WiFi networks and connects to first available
