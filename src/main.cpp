@@ -1,82 +1,114 @@
+/*
+ *  Copyright (C) 2019 lokthelok
+ *  Copyright (C) 2016 PhracturedBlue
+ *  Copyright (C) 2018 Andreas Spiess
+ *  Copyright (C) 2018 MickMake
+ *
+ *  This file is part of CalendarPrinter.
+ * 
+ *  CalendarPrinter is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <WiFi.h>
 #include <SPIFFS.h>
 #include <WiFiClientSecure.h>
+#include <Adafruit_Thermal.h>
 #include <calEvent.h>
+#include <calPrint.h>
 #if __has_include(<urls.h>)
 #  include <urls.h>
 #  define URLS
 #endif
 
-//Uncomment DEBUGG to print serial debug messages
-// LarryD, Arduino forum
-//#define DEBUGG
-#ifdef DEBUGG
-#define DPRINT(...)    Serial.print(__VA_ARGS__)
-#define DPRINTLN(...)  Serial.println(__VA_ARGS__)
-#define DPRINTF(...)   Serial.printf(__VA_ARGS__)
-#else
-#define DPRINT(...)
-#define DPRINTLN(...)
-#define DPRINTF(...)
-#endif
-
 #ifndef URLS
-const char* ssid = "SSID";
-const char* password = "PASSWORD";
+//Add or remove full WIFI_CONN() lines to add/remove networks from list
+//Networks are connected by ordered preference, index 0 being first.
+#define NETWORK_LIST { \
+	WIFI_CONN("SSID1", "PASSWORD1"), \
+	WIFI_CONN("SSID2", "PASSWORD2"), \
+	WIFI_CONN("SSID3", "PASSWORD3"), \
+	NULL, \
+	}
+#define NETWORK_LIST_LENGTH 3
 const char* script = "https://script.google.com/macros/s/A1B2C3D4/exec";
 #else
-const char* ssid = SSID;
-const char* password = PSK;
 const char* script = SCRIPT_URL;
 #endif
 
-String FetchGCal(String url);
-String WebFetch(String url);
-
-WiFiClientSecure client;
-
+#include <main.h>
 
 void setup() {
  
-  Serial.begin(115200);
-  delay(1250);
+	Serial.begin(115200);
+	delay(1250);
 
-  if (!SPIFFS.begin(true)) {
-    DPRINTLN("Error mounting SPIFFS");
-  }
-  
-  //listAllFiles();
-  //DPRINTF("Formatted: %u\n", int(SPIFFS.format()));
-  //listAllFiles();
+	//Initialise Thermal Printer
+	Serial2.begin(9600);
+	printer.begin();
 
-  DPRINT("Connecting to WiFi.");
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    DPRINT(".");
-    delay(300);
-  }
-  DPRINTF("\nConnected to WiFi: %s\n",ssid);
+	// if (!SPIFFS.begin(true)) {
+	// 	DPRINTLN("Error mounting SPIFFS");
+	// }
+	//listAllFiles();
+	//DPRINTF("Formatted: %u\n", int(SPIFFS.format()));
+	//listAllFiles();
+
+	network = searchWiFi();
+
+	DPRINT("Connecting to WiFi.");
+	WiFi.begin(network.ssid, network.password);
+	while (WiFi.status() != WL_CONNECTED) {
+		DPRINT(".");
+		delay(300);
+	}
+	DPRINTF("\nConnected to WiFi: %s\n",network.ssid);
  
 }
  
 void loop() {
-  if (WiFi.status() == WL_CONNECTED)
+  	if (WiFi.status() == WL_CONNECTED)
 	{
 		String response = FetchGCal(script);
 		DPRINTF("Today's Calendar:\n%s\n", response.c_str());
 		
-    //Extract single event for testing
-    String line = getValue(response,'\n',4);
-    DPRINTF("Extracted Event: %s\n",line.c_str());
+		//Extract current date
+		String date = getValue(response,'\n',0);
+		date = date.substring(0,15);
+		DPRINTF("Extracted Date: %s\n",date.c_str());
 
-    //Create CalEvent
-    calEvent ev0(line);
-    Serial.println(ev0.stringify());
+		//Create CalEvent Array
+		byte eventsLength = getLength(response,'\n') - 1;
+		Serial.printf("Number Events: %u\n",eventsLength);
+
+		//Print Today's Events
+		printer.wake();
+		printer.print('\n');
+		headerPrint(date);
+		int i;
+		for(i = 0; i < eventsLength; i++)
+		{
+			calEvent temp = calEvent(getValue(response,'\n',i+1));
+			DPRINTLN(temp.stringify());
+			eventPrint(&temp);
+		}
+		printer.feed(3);
+		printer.sleep();
 	}
 
   DPRINTLN("\nwhile(1);");
   while(1);
-  delay(10000);
+  delay(3000);
  
 }
 
@@ -168,4 +200,34 @@ String WebFetch(String url)
 	}
 
 	return(Response);
+}
+
+wifi_conn searchWiFi(void)
+{
+	DPRINTF("scan start\n");
+	int n = WiFi.scanNetworks();
+	DPRINTF("scan done: %i\n", n);
+	for(int x = 0; x < n; x++) DPRINTF("%i:%s\n",x,WiFi.SSID(x).c_str());
+
+	WiFi.mode(WIFI_STA);
+	WiFi.disconnect();
+	wifi_conn available_network;
+	int i,j;
+	if(n > 0) {
+		for(i = 0; i < NETWORK_LIST_LENGTH; i++)
+		{
+		DPRINTF("l");
+		for(j = 0; j < n; j++)
+		{
+			DPRINTF("f");
+			if(strcmp(networks[i].ssid,WiFi.SSID(j).c_str()) == 0)
+			{
+			DPRINTF("\nMatched - list: %s  found: %s\n",networks[i].ssid,WiFi.SSID(j).c_str());
+			available_network = networks[i];
+			return available_network;
+			}
+		}
+		}
+	}
+	return available_network;
 }

@@ -1,18 +1,51 @@
+/*
+ *  Copyright (C) 2019 lokthelok
+ *
+ *  This file is part of CalendarPrinter.
+ * 
+ *  CalendarPrinter is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <Arduino.h>
 #include <calEvent.h>
 
 //Class Function Definitions
+calEvent::calEvent()
+{
+
+}
+
 calEvent::calEvent(String response)
 {
   name = getValue(response,',',nameE);
   location = getValue(response,',',locationE);
   startTime = getValue(response,',',startE);
   endTime = getValue(response,',',endE);
-  allDay = getValue(response,',',alldayE);
+  allDayStr = getValue(response,',',alldayE);
   guestString = getValue(response,',',guestsE);
   guests = numGuests(response);
   guestList = new String[guests];
 
+  if(allDayStr == String("allday"))
+  {
+    allDay = true;
+  }
+  else
+  {
+    allDay = false;
+  }
+  
   int i;
   for(i=0; i<guests; i++)
   {
@@ -32,12 +65,12 @@ int calEvent::numGuests(String response)
 }
 
 const char* calEvent::stringify() {
-  String out = "calEvent: begin\n";
+  String out = "Calendar Event: begin\n";
   out += "  name:     " + name + "\n";
   out += "  location: " + location + "\n";
   out += "  start:    " + startTime + "\n";
   out += "  end:      " + endTime + "\n";
-  String ad = allDay?String("allday"):String("notday");
+  String ad = allDay?String("yes"):String("no");
   out += "  allday:   " + ad + "\n";
   out += "  guests:\n";
   int i;
@@ -45,7 +78,7 @@ const char* calEvent::stringify() {
   {
     out += "            " + guestList[i] + "\n";
   }
-  out += "calEvent: end\n";
+  out += "Calendar Event: end\n";
   return out.c_str();
 }
 

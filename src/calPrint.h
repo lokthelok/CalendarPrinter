@@ -1,6 +1,5 @@
 /*
  *  Copyright (C) 2019 lokthelok
- *  Copyright (C) 2016 PhracturedBlue
  *
  *  This file is part of CalendarPrinter.
  * 
@@ -18,18 +17,31 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//Credentials and Sensitive Information
-//Ensure this is not committed for security!
+#ifndef calPrint_h
+#define calPrint_h
 
-//WiFi Credentials
-#define NETWORK_LIST { \
-	WIFI_CONN("SSID1", "PASSWORD1"), \
-	WIFI_CONN("SSID2", "PASSWORD2"), \
-	WIFI_CONN("SSID3", "PASSWORD3"), \
-	NULL, \
-	}
-#define NETWORK_LIST_LENGTH 3
+#include <Arduino.h>
+#include <calEvent.h>
+#include <Adafruit_Thermal.h>
 
-//Google Scripts
-// CalendarPrinter Script URL
-#define SCRIPT_URL "https://script.google.com/macros/s/A1B2C3D4/exec"
+//Object Definition
+extern Adafruit_Thermal printer;
+
+//Typedef Enums
+typedef enum borderStyle
+{
+  LIGHT,
+  HEAVY,
+  DOUBLE
+}borderStyle;
+
+//Function Declaration
+void eventPrint(calEvent *event);
+void headerPrint(String date);
+String makeLine(String input, byte width, bool wrap);
+void wrapBorders(String input, borderStyle style, byte width, byte innerPadding, byte outerPadding);
+void wrapBorders(String input, borderStyle style, byte width);
+void topBorder(borderStyle style, byte width, byte outerPadding);
+void bottomBorder(borderStyle style, byte width, byte outerPadding);
+
+#endif
