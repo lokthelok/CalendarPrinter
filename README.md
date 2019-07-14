@@ -8,6 +8,9 @@ Daily Calendar Printer (ESP32 and Serial Thermal Printer)
 * ESP32 reads string into calender event datatype
 * ESP32 prints formatted list of the day's events
 
+## Mechanical
+See [mechanical files](mechanical/MECHANICAL.md)
+
 ## License
 [GNU General Public License v3.0](LICENSE)
 
