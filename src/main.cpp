@@ -91,16 +91,64 @@ void loop() {
 		byte eventsLength = getLength(response,'\n') - 1;
 		Serial.printf("Number Events: %u\n",eventsLength);
 
+		int i;
+		calEvent originalEvents[eventsLength];
+		calEvent arrangedEvents[eventsLength];
+
+		if(eventsLength > 0)
+		{	
+			for(i = 0; i < eventsLength; i++)
+			{
+				arrangedEvents[i] = calEvent(getValue(response,'\n',i+1));
+				originalEvents[i] = arrangedEvents[i];
+			}
+
+			//Re-arrange calendar events
+			bool assigned[eventsLength];
+			arrInit(assigned,false,eventsLength);
+			String tempA,tempB;
+
+			long curr = 0;
+			long next = random(long(eventsLength));
+			tempA = arrangedEvents[curr].name;
+			
+			while(addArr(assigned,eventsLength) < eventsLength-1)
+			{
+				Serial.printf("%ld:%ld ",curr,next);
+				tempB = arrangedEvents[next].name;
+				assigned[next] = true;
+				if(curr != next)
+				{
+					arrangedEvents[next].name = tempA;
+					tempA = tempB;
+					curr = next;
+				}
+				else
+				{
+					while(assigned[curr] == true) curr = random(long(eventsLength));
+					tempA = arrangedEvents[curr].name;
+				}
+				while(assigned[next] == true && addArr(assigned,eventsLength) < eventsLength-1) next = random(long(eventsLength)); //Resample until new spot
+			}
+
+			Serial.println();
+			for(i = 0; i < eventsLength; i++) Serial.printf("%i: %s -> %s\n",i,originalEvents[i].name.c_str(),arrangedEvents[i].name.c_str());
+		}
+
+		Serial.println("while(1)");
+		while(1);
+
 		//Print Today's Events
 		printer.wake();
 		printer.print('\n');
 		headerPrint(date);
-		int i;
 		for(i = 0; i < eventsLength; i++)
 		{
-			calEvent temp = calEvent(getValue(response,'\n',i+1));
-			DPRINTLN(temp.stringify());
-			eventPrint(&temp);
+			//calEvent temp = calEvent(getValue(response,'\n',i+1));
+			//DPRINTLN(temp.stringify());
+			
+			//calEvent temp = arrangedEvents[i];
+			//eventPrint(&temp);
 		}
 		printer.feed(3);
 		printer.sleep();
@@ -230,4 +278,30 @@ wifi_conn searchWiFi(void)
 		}
 	}
 	return available_network;
+}
+
+void arrInit(bool *arr, bool val, long len)
+{
+	for(int a = 0; a < len; a++)
+	{
+		arr[a] = val;
+	}
+	return;
+}
+void arrInit(int *arr, int val, long len)
+{
+	for(int a = 0; a < len; a++)
+	{
+		arr[a] = val;
+	}
+	return;
+}
+long addArr(bool *arr, long len)
+{
+	long ret = 0;
+	for(int a = 0; a < len; a++)
+	{
+		ret += long(arr[a]);
+	}
+	return ret;
 }

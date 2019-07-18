@@ -1,12 +1,16 @@
-# CalendarPrinter
+# Useless CalendarPrinter
 Daily Calendar Printer (ESP32 and Serial Thermal Printer)
+This device will print a receipt of your day's activities but not in a useful way. You'll have to unjumble all the information first...
 
 ## Outline
 * ESP32 scans WiFi networks and connects to first available
 * ESP32 sends GET to Google Apps Script
 * Google Apps Script fetches today's calendar events and creates string of events
 * ESP32 reads string into calender event datatype
-* ESP32 prints formatted list of the day's events
+* Randomly mixes up all information
+* ESP32 prints formatted list of the day's (non)events
+
+If there are no events in a day, the device thoughtfully gives you something to do by feeding it's entire roll out at you.
 
 ## Mechanical
 See [mechanical files](mechanical/MECHANICAL.md)

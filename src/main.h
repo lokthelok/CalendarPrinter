@@ -48,6 +48,9 @@ typedef struct {
 String FetchGCal(String url);
 String WebFetch(String url);
 wifi_conn searchWiFi(void);
+void arrInit(bool *arr, bool val, long len);
+void arrInit(int *arr, int val, long len);
+long addArr(bool *arr, long len);
 
 WiFiClientSecure client;
 Adafruit_Thermal printer(&Serial2);
