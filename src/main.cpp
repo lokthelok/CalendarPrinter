@@ -26,6 +26,7 @@
 #include <Adafruit_Thermal.h>
 #include <calEvent.h>
 #include <calPrint.h>
+#include <algorithm>
 #if __has_include(<urls.h>)
 #  include <urls.h>
 #  define URLS
@@ -49,25 +50,18 @@ const char* script = SCRIPT_URL;
 #include <main.h>
 
 void setup() {
- 
+	//Initialise Serial
 	Serial.begin(115200);
-	delay(1250);
 
 	//Initialise Thermal Printer
 	Serial2.begin(9600);
 	printer.begin();
 
-	// if (!SPIFFS.begin(true)) {
-	// 	DPRINTLN("Error mounting SPIFFS");
-	// }
-	//listAllFiles();
-	//DPRINTF("Formatted: %u\n", int(SPIFFS.format()));
-	//listAllFiles();
-
+	//Connect to first network available in list
 	network = searchWiFi();
-
 	DPRINT("Connecting to WiFi.");
 	WiFi.begin(network.ssid, network.password);
+	//Wait for WiFi connection
 	while (WiFi.status() != WL_CONNECTED) {
 		DPRINT(".");
 		delay(300);
@@ -77,8 +71,10 @@ void setup() {
 }
  
 void loop() {
+	//Wait for WiFi connection (shouldn't be necessary)
   	if (WiFi.status() == WL_CONNECTED)
 	{
+		//Get Google Scripts calendar response
 		String response = FetchGCal(script);
 		DPRINTF("Today's Calendar:\n%s\n", response.c_str());
 		
@@ -87,56 +83,43 @@ void loop() {
 		date = date.substring(0,15);
 		DPRINTF("Extracted Date: %s\n",date.c_str());
 
-		//Create CalEvent Array
+		//Get number of calendar events
 		byte eventsLength = getLength(response,'\n') - 1;
-		Serial.printf("Number Events: %u\n",eventsLength);
+		DPRINTF("Number Events: %u\n",eventsLength);
 
+		//Create calEvent array and randomise
 		int i;
-		calEvent originalEvents[eventsLength];
-		calEvent arrangedEvents[eventsLength];
+		arrangedEvents = new calEvent[eventsLength];
+		name = new String[eventsLength];
+		location = new String[eventsLength];
+		times = new String[eventsLength*2];
 
 		if(eventsLength > 0)
 		{	
+			//Load Arrays
 			for(i = 0; i < eventsLength; i++)
 			{
 				arrangedEvents[i] = calEvent(getValue(response,'\n',i+1));
-				originalEvents[i] = arrangedEvents[i];
+				name[i] = arrangedEvents[i].name;
+				location[i] = arrangedEvents[i].location;
+				times[i] = arrangedEvents[i].startTime;
+				times[i+eventsLength] = arrangedEvents[i].endTime;
 			}
-
-			//Re-arrange calendar events
-			bool assigned[eventsLength];
-			arrInit(assigned,false,eventsLength);
-			String tempA,tempB;
-
-			long curr = 0;
-			long next = random(long(eventsLength));
-			tempA = arrangedEvents[curr].name;
 			
-			while(addArr(assigned,eventsLength) < eventsLength-1)
+			//Randomize Data
+			std::random_shuffle(&name[0],&name[eventsLength],static_cast<long(*)(long)>(random));
+			std::random_shuffle(&location[0],&location[eventsLength],static_cast<long(*)(long)>(random));
+			std::random_shuffle(&times[0],&times[eventsLength*2],static_cast<long(*)(long)>(random));
+
+			//Random Data back to Events
+			for(i = 0; i < eventsLength; i++)
 			{
-				Serial.printf("%ld:%ld ",curr,next);
-				tempB = arrangedEvents[next].name;
-				assigned[next] = true;
-				if(curr != next)
-				{
-					arrangedEvents[next].name = tempA;
-					tempA = tempB;
-					curr = next;
-				}
-				else
-				{
-					while(assigned[curr] == true) curr = random(long(eventsLength));
-					tempA = arrangedEvents[curr].name;
-				}
-				while(assigned[next] == true && addArr(assigned,eventsLength) < eventsLength-1) next = random(long(eventsLength)); //Resample until new spot
+				arrangedEvents[i].name = name[i];
+				arrangedEvents[i].location = location[i];
+				arrangedEvents[i].startTime = times[i];
+				arrangedEvents[i].endTime = times[i+eventsLength];
 			}
-
-			Serial.println();
-			for(i = 0; i < eventsLength; i++) Serial.printf("%i: %s -> %s\n",i,originalEvents[i].name.c_str(),arrangedEvents[i].name.c_str());
 		}
-
-		Serial.println("while(1)");
-		while(1);
 
 		//Print Today's Events
 		printer.wake();
@@ -144,27 +127,25 @@ void loop() {
 		headerPrint(date);
 		for(i = 0; i < eventsLength; i++)
 		{
-			//calEvent temp = calEvent(getValue(response,'\n',i+1));
-			//DPRINTLN(temp.stringify());
-			
-			//calEvent temp = arrangedEvents[i];
-			//eventPrint(&temp);
+			DPRINTLN(arrangedEvents[i].stringify());
+			eventPrint(&arrangedEvents[i]);
 		}
 		printer.feed(3);
-		printer.sleep();
-	}
 
-  DPRINTLN("\nwhile(1);");
-  while(1);
-  delay(3000);
- 
+		//Printer to sleep
+		printer.sleep();
+		DPRINTLN("\nwhile(1);");
+  		while(1);
+	}
 }
 
 String FetchGCal(String url)
 {
 	String Return1;
 	String Return2;
+	//Get redirect notice
 	Return1 = WebFetch(url);
+	//Get calendar
 	Return2 = WebFetch(Return1);
 
 	return(Return2);
@@ -179,7 +160,7 @@ String WebFetch(String url)
 
 	strURL = url.c_str();
 	DPRINT("GCAL:URL:");
-  DPRINTLN(strURL);
+    DPRINTLN(strURL);
 
 	if (memcmp("https://", strURL, 8) == 0)
 	{
@@ -194,7 +175,7 @@ String WebFetch(String url)
 	}
 
 	DPRINT("GCAL:server:");
-  DPRINTLN(server);
+    DPRINTLN(server);
 	if (!client.connect(server, 443))
 		DPRINTLN("GCAL:No connection");
 	else
@@ -220,13 +201,13 @@ String WebFetch(String url)
 				Redirect = 1;
 				Response = line.substring(line.indexOf("http"));
 				DPRINT("GCAL:REDIRECT:");
-        DPRINTLN(Response);
+        		DPRINTLN(Response);
 			}
 			if (line == "\r")
 				break;
 		}
 		DPRINT("GCAL:HEADER:");
-    DPRINTLN(header);
+    	DPRINTLN(header);
 
 		String body;
 		while (client.available())
@@ -240,13 +221,11 @@ String WebFetch(String url)
 		if (!Redirect)
 		{
 			DPRINT("GCAL:BODY:");
-      DPRINTLN(body);
+      		DPRINTLN(body);
 			Response = body;
 		}
-
 		client.stop();
 	}
-
 	return(Response);
 }
 
@@ -261,47 +240,22 @@ wifi_conn searchWiFi(void)
 	WiFi.disconnect();
 	wifi_conn available_network;
 	int i,j;
-	if(n > 0) {
+	if(n > 0)
+	{
 		for(i = 0; i < NETWORK_LIST_LENGTH; i++)
 		{
-		DPRINTF("l");
-		for(j = 0; j < n; j++)
-		{
-			DPRINTF("f");
-			if(strcmp(networks[i].ssid,WiFi.SSID(j).c_str()) == 0)
+			DPRINTF("l");
+			for(j = 0; j < n; j++)
 			{
-			DPRINTF("\nMatched - list: %s  found: %s\n",networks[i].ssid,WiFi.SSID(j).c_str());
-			available_network = networks[i];
-			return available_network;
+				DPRINTF("f");
+				if(strcmp(networks[i].ssid,WiFi.SSID(j).c_str()) == 0)
+				{
+					DPRINTF("\nMatched - list: %s  found: %s\n",networks[i].ssid,WiFi.SSID(j).c_str());
+					available_network = networks[i];
+					return available_network;
+				}
 			}
-		}
 		}
 	}
 	return available_network;
-}
-
-void arrInit(bool *arr, bool val, long len)
-{
-	for(int a = 0; a < len; a++)
-	{
-		arr[a] = val;
-	}
-	return;
-}
-void arrInit(int *arr, int val, long len)
-{
-	for(int a = 0; a < len; a++)
-	{
-		arr[a] = val;
-	}
-	return;
-}
-long addArr(bool *arr, long len)
-{
-	long ret = 0;
-	for(int a = 0; a < len; a++)
-	{
-		ret += long(arr[a]);
-	}
-	return ret;
 }
