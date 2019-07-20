@@ -10,8 +10,9 @@ FILE_DESCRIPTION(
 
 FILE_NAME(
 /* name */ 
-'/path/CalendarPrinter Enclosure v22.step',
-/* time_stamp */ '2019-07-14T18:15:58+10:00',
+'/Users/lachlan/Dropbox/Projects/ESP32/CalendarPrinter_useless/mechani
+cal/CalendarPrinter Enclosure v23.step',
+/* time_stamp */ '2019-07-19T13:50:48+09:00',
 /* author */ (''),
 /* organization */ (''),
 /* preprocessor_version */ 'ST-DEVELOPER v18',
@@ -1238,9 +1239,9 @@ SHAPE_REPRESENTATION_RELATIONSHIP()
 #193=NEXT_ASSEMBLY_USAGE_OCCURRENCE('EzSBC ESP32-01 Dev Board v5:1',
 'EzSBC ESP32-01 Dev Board v5:1','EzSBC ESP32-01 Dev Board v5:1',#49592,
 #49594,'EzSBC ESP32-01 Dev Board v5:1');
-#194=NEXT_ASSEMBLY_USAGE_OCCURRENCE('Thermal Printer v5:1',
-'Thermal Printer v5:1','Thermal Printer v5:1',#49595,#49596,
-'Thermal Printer v5:1');
+#194=NEXT_ASSEMBLY_USAGE_OCCURRENCE('Thermal Printer v6:1',
+'Thermal Printer v6:1','Thermal Printer v6:1',#49595,#49596,
+'Thermal Printer v6:1');
 #195=NEXT_ASSEMBLY_USAGE_OCCURRENCE('M3x5 CSK L:1','M3x5 CSK L:1',
 'M3x5 CSK L:1',#49599,#49600,'M3x5 CSK L:1');
 #196=NEXT_ASSEMBLY_USAGE_OCCURRENCE('M3x5 CSK L:4','M3x5 CSK L:4',
@@ -53122,7 +53123,7 @@ SOLID_ANGLE_UNIT()
 #49589=SHAPE_REPRESENTATION('',(#30333),#49523);
 #49590=PRODUCT_DEFINITION_CONTEXT('part definition',#49634,'design');
 #49591=PRODUCT_DEFINITION('CalendarPrinter Enclosure',
-'CalendarPrinter Enclosure v22',#49605,#49590);
+'CalendarPrinter Enclosure v23',#49605,#49590);
 #49592=PRODUCT_DEFINITION('EzSBC ESP32 on Breadboard',
 'EzSBC ESP32 on Breadboard',#49606,#49590);
 #49593=PRODUCT_DEFINITION('Mini Breadboard','Mini Breadboard v2',#49607,
@@ -53130,7 +53131,7 @@ SOLID_ANGLE_UNIT()
 #49594=PRODUCT_DEFINITION('EzSBC ESP32-01 Dev Board',
 'EzSBC ESP32-01 Dev Board v5',#49608,#49590);
 #49595=PRODUCT_DEFINITION('Thermal Printer','Thermal Printer',#49609,#49590);
-#49596=PRODUCT_DEFINITION('Thermal Printer_1','Thermal Printer v5',#49610,
+#49596=PRODUCT_DEFINITION('Thermal Printer_1','Thermal Printer v6',#49610,
 #49590);
 #49597=PRODUCT_DEFINITION('Enclosure Body','Enclosure Body',#49611,#49590);
 #49598=PRODUCT_DEFINITION('Enclosure Side L','Enclosure Side L',#49612,
@@ -53158,8 +53159,8 @@ SOLID_ANGLE_UNIT()
 #49616=PRODUCT_DEFINITION_FORMATION('',$,#49647);
 #49617=PRODUCT_DEFINITION_FORMATION('',$,#49648);
 #49618=PRODUCT_DEFINITION_FORMATION('',$,#49649);
-#49619=PRODUCT_RELATED_PRODUCT_CATEGORY('CalendarPrinter Enclosure v22',
-'CalendarPrinter Enclosure v22',(#49636));
+#49619=PRODUCT_RELATED_PRODUCT_CATEGORY('CalendarPrinter Enclosure v23',
+'CalendarPrinter Enclosure v23',(#49636));
 #49620=PRODUCT_RELATED_PRODUCT_CATEGORY('EzSBC ESP32 on Breadboard',
 'EzSBC ESP32 on Breadboard',(#49637));
 #49621=PRODUCT_RELATED_PRODUCT_CATEGORY('Mini Breadboard v2',
@@ -53168,8 +53169,8 @@ SOLID_ANGLE_UNIT()
 'EzSBC ESP32-01 Dev Board v5',(#49639));
 #49623=PRODUCT_RELATED_PRODUCT_CATEGORY('Thermal Printer',
 'Thermal Printer',(#49640));
-#49624=PRODUCT_RELATED_PRODUCT_CATEGORY('Thermal Printer v5',
-'Thermal Printer v5',(#49641));
+#49624=PRODUCT_RELATED_PRODUCT_CATEGORY('Thermal Printer v6',
+'Thermal Printer v6',(#49641));
 #49625=PRODUCT_RELATED_PRODUCT_CATEGORY('Enclosure Body',
 'Enclosure Body',(#49642));
 #49626=PRODUCT_RELATED_PRODUCT_CATEGORY('Enclosure Side L',
@@ -53189,14 +53190,14 @@ SOLID_ANGLE_UNIT()
 'Core Data for Automotive Mechanical Design Process');
 #49635=PRODUCT_CONTEXT('part definition',#49634,'mechanical');
 #49636=PRODUCT('CalendarPrinter Enclosure',
-'CalendarPrinter Enclosure v22',$,(#49635));
+'CalendarPrinter Enclosure v23',$,(#49635));
 #49637=PRODUCT('EzSBC ESP32 on Breadboard','EzSBC ESP32 on Breadboard',
 $,(#49635));
 #49638=PRODUCT('Mini Breadboard','Mini Breadboard v2',$,(#49635));
 #49639=PRODUCT('EzSBC ESP32-01 Dev Board','EzSBC ESP32-01 Dev Board v5',
 $,(#49635));
 #49640=PRODUCT('Thermal Printer','Thermal Printer',$,(#49635));
-#49641=PRODUCT('Thermal Printer_1','Thermal Printer v5',$,(#49635));
+#49641=PRODUCT('Thermal Printer_1','Thermal Printer v6',$,(#49635));
 #49642=PRODUCT('Enclosure Body','Enclosure Body',$,(#49635));
 #49643=PRODUCT('Enclosure Side L','Enclosure Side L',$,(#49635));
 #49644=PRODUCT('Fasteners','Fasteners',$,(#49635));

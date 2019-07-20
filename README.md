@@ -26,3 +26,5 @@ See [mechanical files](mechanical/MECHANICAL.md)
   * DEBUG #defines
 * [ESP8266MQTTMesh](https://github.com/PhracturedBlue/ESP8266MQTTMesh) by PhracturedBlue
   * wifi_conn struct
+* [bitmapImageConvert](https://github.com/adafruit/Adafruit-Thermal-Printer-Library/tree/master/processing/bitmapImageConvert) by Adafruit
+  * Receipt logo
