@@ -2,6 +2,9 @@
 Daily Calendar Printer (ESP32 and Serial Thermal Printer)
 This device will print a receipt of your day's activities but not in a useful way. You'll have to unjumble all the information first...
 
+Project documented on [HACKADAY.IO](https://hackaday.io/project/166659-calendar-printer-useless-edition)
+Mechanical also available on [Fusion360 Gallery](https://gallery.autodesk.com/fusion360/projects/141677/calendarprinter)
+
 ## Outline
 * ESP32 scans WiFi networks and connects to first available
 * ESP32 sends GET to Google Apps Script
