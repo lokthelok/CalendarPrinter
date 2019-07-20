@@ -87,6 +87,11 @@ void loop() {
 		byte eventsLength = getLength(response,'\n') - 1;
 		DPRINTF("Number Events: %u\n",eventsLength);
 
+		//Print Today's Header
+		printer.wake();
+		printer.print('\n');
+		headerPrint(date);
+
 		//Create calEvent array and randomise
 		int i;
 		arrangedEvents = new calEvent[eventsLength];
@@ -119,18 +124,22 @@ void loop() {
 				arrangedEvents[i].startTime = times[i];
 				arrangedEvents[i].endTime = times[i+eventsLength];
 			}
-		}
 
-		//Print Today's Events
-		printer.wake();
-		printer.print('\n');
-		headerPrint(date);
-		for(i = 0; i < eventsLength; i++)
-		{
-			DPRINTLN(arrangedEvents[i].stringify());
-			eventPrint(&arrangedEvents[i]);
+			//Print Today's Events
+			for(i = 0; i < eventsLength; i++)
+			{
+				DPRINTLN(arrangedEvents[i].stringify());
+				eventPrint(&arrangedEvents[i]);
+			}
+			printer.feed(3);
 		}
-		printer.feed(3);
+		else
+		{
+			while(1)
+			{
+				printer.feed(5);
+			}
+		}
 
 		//Printer to sleep
 		printer.sleep();
